@@ -1,0 +1,39 @@
+{
+    "name": "buildql/query-builder",
+    "description": "A secure, fluent, and lightweight SQL Query Builder for PHP, inspired by Laravel Query Builder.",
+    "type": "library",
+    "keywords": ["query builder", "database", "sql", "php", "mysqli", "buildql", "build sql", "laravel-style", "fluent"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Umar Ali",
+            "email": "umar.pwu786@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=8.0",
+        "ext-mysqli": "*",
+        "vlucas/phpdotenv": "^5.6"
+    },
+    "require-dev": {
+        "pestphp/pest": "^3.8"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "BuildQL\\Database\\Query\\": "src/"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}
