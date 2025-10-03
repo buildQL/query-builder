@@ -72,11 +72,21 @@ class DB{
 
     /**
      *  Boot the database connection
+     *  @param ?string $absoluteEnvPath - The file path should be the absolute env path
      *  @throws BuildQL\Database\Query\Exception\BuilderException
      */
-    public static function boot(): void
+    public static function boot(?string $absoluteEnvPath = null): void
     {
-        $envFilePath = __DIR__ . "/../";
+        if ($absoluteEnvPath != null && file_exists($absoluteEnvPath . "/.env")){
+            $envFilePath = $absoluteEnvPath;
+        }
+        elseif (file_exists(dirname(__DIR__, 1) . "/.env")){
+            $envFilePath = dirname(__DIR__, 1);
+        }
+        else{
+            throw new BuilderException(".env file not found. Create .env file in your project root or call DB::boot('/path/to/env/directory') with absolute path.");
+        }
+
         $dotenv = Dotenv::createImmutable($envFilePath);
         $dotenv->safeLoad();
 
@@ -90,7 +100,7 @@ class DB{
             );
         }
         else {
-            throw new BuilderException("Database credentials is not defined in .env file");
+            throw new BuilderException("Missing database configuration in .env file.");
         }
     }
 
