@@ -5,7 +5,9 @@ namespace BuildQL\Database\Query\Exception;
 use Exception;
 
 class BuilderException extends Exception{
-    public function __construct(public string $msg){}
+    public function __construct(public string $msg){
+        parent::__construct($msg);
+    }
 
     /**
      *  Through Builder Exception Error Message
