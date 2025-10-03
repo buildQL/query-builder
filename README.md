@@ -58,7 +58,7 @@ $users = DB::table('users')->get();
 
 ### Using .env File (Optional)
 
-Create a `.env` file in your project root:
+Create a `.env` file in your project root or ../vendor/buildql/query-builder/.env:
 
 ```env
 DB_HOST=localhost
@@ -75,6 +75,9 @@ Bootstrap the connection:
 use BuildQL\Database\Query\DB;
 
 DB::boot(); // Automatically loads from .env
+
+DB::boot("/path/to/your/.env") // You can also define absolute env file path without define .env file
+                               // in boot() method to load credentials from .env
 ```
 
 ---
@@ -122,13 +125,14 @@ public static function boot(): void
 ```
 
 **Requirements:**
-- `.env` file must exist in parent directory of vendor folder
+- `.env` file must exist in your root directory or /buildql/query-builder of vendor folder
 - Must contain: `DB_HOST`, `DB_USERNAME`, `DB_PASSWORD`, `DB_PORT`
 - Optional: `DB_DATABASE`
 
 **Example:**
 ```php
-DB::boot();
+DB::boot(); // or
+DB::boot("/path/to/.env");
 ```
 
 **Throws:** `BuilderException` if credentials are missing or invalid.
