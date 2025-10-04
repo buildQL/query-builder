@@ -5,7 +5,7 @@ namespace BuildQL\Database\Query\Exception;
 use Exception;
 
 class BuilderException extends Exception{
-    public function __construct(public string $msg){
+    public function __construct(public string $msg, public bool $trace = true){
         parent::__construct($msg);
     }
 
@@ -14,7 +14,8 @@ class BuilderException extends Exception{
      */
     public function getErrorMessage(): string
     {
-        return $this->msg . " - " . $this->getTraced();
+        $msg = $this->msg . " - " . $this->getTraced();
+        return $this->trace ? $msg : $this->msg;
     }
 
     /**

@@ -53,7 +53,7 @@ class Builder{
     protected array $columns = ['*'];
 
     /**
-     *  Distinct columns or set of columns 
+     *  Distinct column or set of columns 
      */
     protected bool $distinct = false;
 
@@ -113,6 +113,7 @@ class Builder{
 
     /**
      *  Construct and initialize the default values
+     *  @throws BuildQL\Database\Query\Exception\BuilderException
      */
     public function __construct(string $table, mysqli $conn, ?string $database = null)
     {
@@ -194,7 +195,8 @@ class Builder{
 
 
     /**
-     *  Defining columns that are being fetched in query result 
+     *  Defining columns that are being fetched in query result
+     *  @throws BuildQL\Database\Query\Exception\BuilderException 
      */
     public function select(array $columns = ['*']): self
     {
@@ -341,9 +343,13 @@ class Builder{
 
     /**
      *  Filter grouping results
+     *  @throws BuildQL\Database\Query\Exception\BuilderException
      */
     public function having(string $column, $oper, $value = null, $boolean = "and"): self
     {
+        if ($value == null && $oper == null){
+            throw new BuilderException("Value must not be null in having() and orHaving() method");
+        }
         $boolean = strtoupper($boolean);
         $this->having[] = $value ? [$column, $oper, $value, $boolean] : [$column, "=", $oper, $boolean];
         return $this;
@@ -352,6 +358,7 @@ class Builder{
 
     /**
      *  Filter grouping results
+     *  @throws BuildQL\Database\Query\Exception\BuilderException
      */
     public function orHaving(string $column, $oper, $value = null): self
     {

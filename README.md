@@ -1,6 +1,6 @@
 # BuildQL Query Builder
 
-A secure, fluent, and lightweight SQL Query Builder for PHP 8.0+, inspired by Laravel's Eloquent Query Builder. BuildQL provides an expressive and intuitive API for building complex database queries without writing raw SQL.
+A secure, fluent, and lightweight SQL Query Builder for PHP 8.0+, inspired by Laravel's Query Builder. BuildQL provides an expressive and intuitive API for building complex database queries without writing raw SQL.
 
 [![PHP Version](https://img.shields.io/badge/PHP-8.0%2B-blue)](https://php.net)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -12,7 +12,7 @@ A secure, fluent, and lightweight SQL Query Builder for PHP 8.0+, inspired by La
 - **Laravel-Style Syntax**: Familiar API for developers coming from Laravel
 - **Multiple Join Types**: Support for INNER, LEFT, RIGHT, and CROSS joins
 - **Aggregate Functions**: Built-in support for COUNT, SUM, MIN, MAX, AVG
-- **Advanced Filtering**: WHERE, OR WHERE, WHERE IN, WHERE NULL conditions
+- **Advanced Filtering**: WHERE, OR WHERE, WHERE IN, WHERE NULL, WHERE NOT NULL conditions
 - **Query Builder**: GROUP BY, HAVING, ORDER BY, LIMIT, OFFSET support
 - **Raw SQL Support**: Execute custom queries when needed
 - **Environment Configuration**: Optional .env file support via phpdotenv
@@ -42,28 +42,27 @@ require 'vendor/autoload.php';
 
 use BuildQL\Database\Query\DB;
 
-// Manual configuration, if you want to manually define your database connection and configuration
-// or when you need to change the database credentials only for a specific web page.
+// Manual configuration
 DB::setConnection(
     'localhost',  // host
     'root',       // username
     '',           // password
     'my_database',// database (optional)
-    'db_port'     // Port (Optional)
+    3306          // port (optional, default: 3306)
 );
 
 // Now you can use the query builder
 $users = DB::table('users')->get();
 ```
 
-### Using .env File (Optional)
+### Using .env File (Recommended)
 
-Create a `.env` file in your project root or ../vendor/buildql/query-builder/.env:
+Create a `.env` file in your project root directory:
 
 ```env
-DB_HOST=localhost
-DB_PORT=3306
-DB_USERNAME=root
+DB_HOST=127.0.0.1 // localhost
+DB_PORT=3306      // default port
+DB_USERNAME=your_username
 DB_PASSWORD=your_password
 DB_DATABASE=your_database
 ```
@@ -72,12 +71,14 @@ Bootstrap the connection:
 
 ```php
 <?php
+require 'vendor/autoload.php';
 use BuildQL\Database\Query\DB;
 
-DB::boot(); // Automatically loads from .env
+// Automatically loads from .env in project's root if exists
+DB::boot();
 
-DB::boot("/path/to/your/.env") // You can also define absolute env file path without define .env file
-                               // in boot() method to load credentials from .env
+// Or specify custom path (directory only, not .env file)
+DB::boot("/path/to/your/env/directory");
 ```
 
 ---
@@ -109,10 +110,10 @@ public static function setConnection(
 
 **Example:**
 ```php
-DB::setConnection('localhost', 'root', '', 'my_app');
+DB::setConnection('localhost', 'root', '', 'my_app', 3306);
 ```
 
-**Note:** Connection can only be established once. Call `DB::resetConnection()` first to reconnect.
+**Note:** Connection can only be established at once. Call `DB::resetConnection()` first to reconnect.
 
 ---
 
@@ -121,18 +122,27 @@ DB::setConnection('localhost', 'root', '', 'my_app');
 Load database credentials from `.env` file and establish connection.
 
 ```php
-public static function boot(): void
+public static function boot(?string $absoluteEnvPath = null): void
 ```
 
+**Parameters:**
+- `$absoluteEnvPath`: Absolute path to directory containing .env file (optional)
+
 **Requirements:**
-- `.env` file must exist in your root directory or /buildql/query-builder of vendor folder
+- `.env` file must exist in your root directory or specified path, else error will be thrown.
 - Must contain: `DB_HOST`, `DB_USERNAME`, `DB_PASSWORD`, `DB_PORT`
-- Optional: `DB_DATABASE`
+- Optional: `DB_DATABASE` (can be set later)
 
 **Example:**
 ```php
-DB::boot(); // or
-DB::boot("/path/to/.env");
+// Load from project root
+DB::boot();
+
+// Load from custom directory
+DB::boot("/var/www/config");
+
+// If path contains .env filename, it will be automatically removed
+DB::boot("/var/www/config/.env"); // Works the same as above
 ```
 
 **Throws:** `BuilderException` if credentials are missing or invalid.
@@ -186,7 +196,11 @@ $success = DB::raw("INSERT INTO users (name, email) VALUES (?, ?)", ['John', 'jo
 
 // UPDATE query
 $success = DB::raw("UPDATE users SET status = ? WHERE id = ?", ['active', 1]);
+
+// ❌ Wrong way to bind values
+$success = DB::raw("UPDATE users SET status = :active WHERE id = :id", ['active' => 'active', 'id' => 1]);
 ```
+**Note:** Only positional placeholders allowed, not named placeholders.
 
 ---
 
@@ -201,6 +215,24 @@ public static function setDatabaseGlobally(string $database): void
 **Example:**
 ```php
 DB::setDatabaseGlobally('my_app');
+```
+
+---
+
+#### `DB::getGlobalDatabase()`
+
+Get the currently selected global database name.
+
+```php
+public static function getGlobalDatabase(): ?string
+```
+
+**Returns:** Database name or `null` if not set
+
+**Example:**
+```php
+DB::setDatabaseGlobally('my_app');
+$currentDb = DB::getGlobalDatabase(); // Returns: 'my_app'
 ```
 
 ---
@@ -243,6 +275,11 @@ public function select(array $columns = ['*']): self
 - `'column:alias'` - Column with alias
 - `'table.column:alias'` - Qualified column with alias
 - `'count(column):total'` - Aggregate with alias
+- `'count(table.column):total'` - Another Aggregate with alias
+
+**Column structure:**
+- `table.column:alias` // normal define columns
+- `count(table.column):alias` // column with aggregate
 
 **Examples:**
 ```php
@@ -258,7 +295,7 @@ DB::table('users')->select(['name:user_name', 'email:user_email'])->get();
 // Qualified columns (with table name)
 DB::table('users')
     ->join('profiles', 'users.id', 'profiles.user_id')
-    ->select(['users.name', 'profiles.bio'])
+    ->select(['users.name', 'profiles.bio', 'users.email:user_email'])
     ->get();
 
 // Aggregate functions in select
@@ -907,6 +944,7 @@ $user = DB::table('users:u')
     ->join('profiles:p', 'u.id', 'p.user_id')
     ->find(1, ['u.name', 'p.bio']);
 ```
+**Note:** If your table primary key column is not `id` then this is not for you because it's a convention that you must be follows.
 
 ---
 
@@ -1009,6 +1047,10 @@ DB::table('orders')
     ->where('status', 'pending')
     ->where('created_at', '<', date('Y-m-d', strtotime('-30 days')))
     ->update(['status' => 'cancelled']);
+
+// ❌ wrong way without where condition. In that case exception will be thrown
+DB::table('users')
+    ->update(['status' => 'active']);
 ```
 
 ---
@@ -1041,6 +1083,10 @@ DB::table('logs')
 DB::table('spam')
     ->where('reported', '>', 5)
     ->whereNull('verified_at')
+    ->delete();
+
+// ❌ Wrong way without where condition. In that case exception will be thrown
+DB::table('users')
     ->delete();
 ```
 
@@ -1258,7 +1304,7 @@ $post = DB::table('posts:p')
 BuildQL automatically uses prepared statements for all values. Never concatenate user input:
 
 ```php
-// ✅ SAFE - Uses prepared statements
+// ✅ SAFE - Uses prepared statements (Recommended way)
 $email = $_POST['email'];
 $user = DB::table('users')->where('email', $email)->first();
 
@@ -1314,7 +1360,7 @@ try {
         'total' => 99.99
     ]);
     
-    DB::table('inventory')->update(['stock' => 5])->where('product_id', 1);
+    DB::table('inventory')->where('product_id', 1)->update(['stock' => 5]);
     
     DB::raw("COMMIT");
 } catch (BuilderException $e) {
@@ -1336,13 +1382,27 @@ use BuildQL\Database\Query\Exception\BuilderException;
 try {
     $users = DB::table('users')->where('age', '>', 18)->get();
 } catch (BuilderException $e) {
-    // Get detailed error message
+    // Get detailed error message with trace
     echo $e->getErrorMessage();
     // Output: "Query Execution Failed: Table 'database.users' doesn't exist - Check your code in app.php at line 25"
     
     // Log error
     error_log($e->getErrorMessage());
 }
+```
+
+### Exception Methods
+
+The `BuilderException` class provides two parameters:
+- `$msg` (string): Error message
+- `$trace` (bool): Include file/line trace (default: `true`)
+
+```php
+// With trace (default behavior)
+throw new BuilderException("Error message"); // Shows: "Error message - Check your code in file.php at line 25"
+
+// Without trace (useful for production)
+throw new BuilderException("Error message", false); // Shows: "Error message"
 ```
 
 ### Common Exceptions
@@ -1670,7 +1730,7 @@ DB::table('users')->where('id', 1)->update(['status' => 'active']);
 
 ### Issue: "Invalid column name"
 
-**Solution:** Column names can only contain letters, numbers, underscores, dots, hyphens, and colons (for aliases) and parenthetis () if are using aggregates function :
+**Solution:** Column names can only contain letters, numbers, underscores, dots, hyphens, and colons (for aliases) and parenthesis () if are using aggregates function :
 
 ```php
 // ❌ Invalid
@@ -1730,7 +1790,7 @@ Contributions are welcome! Please:
 
 ## Changelog
 
-### Version 1.0.0 (Initial Release)
+### Version 1.0.1 (Initial Release)
 - Fluent query builder interface
 - Support for SELECT, INSERT, UPDATE, DELETE operations
 - WHERE, JOIN, GROUP BY, HAVING, ORDER BY clauses
@@ -1748,8 +1808,8 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Support
 
-- **Documentation:** [GitHub Wiki](https://github.com/yourusername/buildql-query-builder/wiki)
-- **Issues:** [GitHub Issues](https://github.com/yourusername/buildql-query-builder/issues)
+- **Documentation:** [GitHub](https://github.com/BuildQL/query-builder)
+- **Issues:** [GitHub Issues](https://github.com/BuildQL/query-builder/issues)
 - **Email:** umar.pwu786@gmail.com
 
 ---
@@ -1768,8 +1828,9 @@ Built with ❤️ for the PHP community.
 
 ```php
 // Connection
-DB::setConnection('host', 'user', 'pass', 'db');
-DB::boot(); // From .env
+DB::setConnection('host', 'user', 'pass', 'db'); // Manually
+// OR
+DB::boot(); // Dynamic from .env
 
 // Basic Queries
 DB::table('users')->get();
@@ -1782,12 +1843,19 @@ DB::table('users')->all();
 ->where('column', 'value')
 ->orWhere('column', 'value')
 ->whereIn('column', [1, 2, 3])
+->orWhereIn('column', [1, 2, 3])
+->whereNotIn('column', [1, 2, 3])
+->orWhereNotIn('column', [1, 2, 3])
 ->whereNull('column')
+->orWhereNull('column')
 ->whereNotNull('column')
+->orWhereNotNull('column')
 
 // Joins
-->join('table', 'key1', 'key2')
+->join('table', 'key1', 'key2') // inner join
 ->leftJoin('table', 'key1', 'key2')
+->rightJoin('table', 'key1', 'key2')
+->crossJoin('table')
 
 // Sorting & Limiting
 ->orderBy('column', 'DESC')
@@ -1795,11 +1863,12 @@ DB::table('users')->all();
 ->offset(20)
 
 // Grouping
-->groupBy('column')
+->groupBy('column1', 'column2')
 ->having('count', '>', 5)
+->orHaving('count', '>', 5)
 
 // Aggregates
-->selectAggregate(count: '*:total')
+->selectAggregate(count: '*:total', sum: "amount:total_amount")
 
 // Modifications
 ->insert(['name' => 'John'])
@@ -1808,7 +1877,7 @@ DB::table('users')->all();
 
 // Utilities
 ->toRawSql()
-->select(['col1', 'col2'])
+->select(['col1', 'col2', 'table.column:alias', 'count(*):total'])
 ->distinct()
 
 // Raw Queries

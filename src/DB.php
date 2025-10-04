@@ -21,6 +21,7 @@ class DB{
     private string $servername;
     private string $username;
     private string $password;
+    private int $port;
 
 
     /**
@@ -43,16 +44,18 @@ class DB{
 
     /**
      *  Private constructor that are being set database configuration and established connection
+     *  @throws BuildQL\Database\Query\Exception\BuilderException
      */
     private function __construct(string $server, string $username, string $pass, int $port = 3306)
     {
         $this->servername = $server;
         $this->username = $username;
         $this->password = $pass;
+        $this->port = $port;
         $this->conn = new mysqli($server, $username, $pass, port: $port);
 
         if ($this->conn->connect_error){
-            throw new BuilderException("Connection Failed Due to : " . $this->conn->connect_error);
+            throw new BuilderException("Database connection failed. Please check your credentials (host, port, username, password). MySQL error: " . $this->conn->connect_error);
         }
     }
 
@@ -64,7 +67,7 @@ class DB{
     public static function table(string $table, ?string $database = null): Builder
     {
         if (self::getConnection() == null){
-            throw new BuilderException("Connection is not established right now.");
+            throw new BuilderException("Cannot run 'table()'. Database connection is not established. Call DB::boot() or DB::setConnection() first.", false);
         }
         return new Builder($table, self::getConnection(), $database);
     }
@@ -77,14 +80,28 @@ class DB{
      */
     public static function boot(?string $absoluteEnvPath = null): void
     {
-        if ($absoluteEnvPath != null && file_exists($absoluteEnvPath . "/.env")){
-            $envFilePath = $absoluteEnvPath;
+        $throw = false;
+        if ($absoluteEnvPath){
+            // if pathname contain .env then replace it.
+            $absoluteEnvPath = preg_replace("/\/?\.env$/i", "", $absoluteEnvPath);
+    
+            if (file_exists($absoluteEnvPath . "/.env")){
+                $envFilePath = $absoluteEnvPath;
+            }
+            else{
+                $throw = "Configuration File Not Found! The .env file was not found at the given path : {$absoluteEnvPath}";
+            }
         }
-        elseif (file_exists(dirname(__DIR__, 1) . "/.env")){
-            $envFilePath = dirname(__DIR__, 1);
+        // check .env file exists in root path
+        elseif (file_exists(dirname(__DIR__, 4) . "/.env")){
+            $envFilePath = dirname(__DIR__, 4);
         }
         else{
-            throw new BuilderException(".env file not found. Create .env file in your project root or call DB::boot('/path/to/env/directory') with absolute path.");
+            $throw = "Configuration File Not Found! Please create a '.env' file in your project root or specify the absolute env path when calling DB::boot('/path/to/env')";
+        }
+
+        if ($throw){
+            throw new BuilderException($throw, false);
         }
 
         $dotenv = Dotenv::createImmutable($envFilePath);
@@ -100,7 +117,7 @@ class DB{
             );
         }
         else {
-            throw new BuilderException("Missing database configuration in .env file.");
+            throw new BuilderException("Database Credentials Missing! Ensure required variables (DB_HOST, DB_USERNAME, DB_PASSWORD, DB_PORT) are correctly set in your '.env' file.", false);
         }
     }
 
@@ -121,7 +138,7 @@ class DB{
     public static function setConnection(string $server, string $username, string $pass, ?string $database = null, int $port = 3306): void
     {
         if (self::$instance){
-            throw new BuilderException("Connection already established. Connection will not be established more than once.");
+            throw new BuilderException("Connection Already Active: The database connection is already set. To establish a new one, call DB::resetConnection() first.");
         }
 
         self::$instance = new self($server, $username, $pass, $port);
@@ -139,7 +156,7 @@ class DB{
     public static function setDatabaseGlobally(string $database): void
     {
         if (self::getConnection() == null){
-            throw new BuilderException("Connection is not established");
+            throw new BuilderException("Cannot set global database. A connection must be established before set the database globally.", false);
         }
         self::$instance->conn->select_db($database);
         self::$instance->database = $database;
@@ -172,7 +189,7 @@ class DB{
     {
         mysqli_report(MYSQLI_REPORT_OFF);
         if (self::$instance == null){
-            throw new BuilderException("Connection is not established");
+            throw new BuilderException("Cannot run raw SQL query. Database connection is not established. Call DB::boot() or DB::setConnection() first.", false);
         }
         if ($prepare = self::$instance->conn->prepare($sql)){
             if ($bind && stripos($sql, "?") !== false){
@@ -180,7 +197,7 @@ class DB{
                 foreach($bind as $val){
                     $bind_type .= is_double($val) || is_float($val) ? "d" : (is_int($val) ? "i" : "s");
                 }
-                $prepare->bind_param($bind_type, ...$bind);
+                $prepare->bind_param($bind_type, ...array_values($bind));
             }
             if ($prepare->execute()){
                 if (preg_match("/^select/i", $sql)){
@@ -191,11 +208,11 @@ class DB{
                 }
             }
             else{
-                throw new BuilderException("Query Execution Failed : " . self::$instance->conn->error);
+                throw new BuilderException("Query execution failed. MySQL error : " . self::$instance->conn->error);
             }
         }
         else{
-            throw new BuilderException("Query Preparation Failed :" . self::$instance->conn->error);
+            throw new BuilderException("Query preparation failed. MySQL error :" . self::$instance->conn->error);
         }
     }
 }

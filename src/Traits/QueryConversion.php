@@ -7,6 +7,7 @@ use BuildQL\Database\Query\Exception\BuilderException;
 trait QueryConversion{
     /**
      *  Convert properties that are being set by method into Raw SQL Query
+     *  @throws BuildQL\Database\Query\Exception\BuilderException
      */
     protected function convertToSQL(string $methodCalledHim = "get", array $data = []): void
     {
@@ -189,6 +190,7 @@ trait QueryConversion{
     /**
      *  Change column format;
      *  e.g. convert table.column:alias to `table`.`column` as `alias`
+     *  @throws BuildQL\Database\Query\Exception\BuilderException
      */
     private function changeColumnFormat(array|string $columns): array|string
     {
@@ -216,6 +218,7 @@ trait QueryConversion{
     /**
      *  Change aggregate column format;
      *  e.g. convert count(table.column):alias to count(`table`.`column`) as `alias`
+     *  @throws BuildQL\Database\Query\Exception\BuilderException
     */
     private function changeAggregateColumnFormat(string|array $columns): string|array
     {
@@ -246,6 +249,7 @@ trait QueryConversion{
     /**
      *  Validate columns name passed by the developer,
      *  Ensure column only contains specific characters
+     *  @throws BuildQL\Database\Query\Exception\BuilderException
      */
     private function validateColumn(string $column) : true
     {

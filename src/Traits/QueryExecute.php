@@ -7,6 +7,7 @@ use BuildQL\Database\Query\Exception\BuilderException;
 trait QueryExecute{
     /**
      *  This method prepare query and execute them
+     *  @throws BuildQL\Database\Query\Exception\BuilderException
      */
     protected function prepareAndExecuteQuery(string $methodCalledHim = "get", array $binding = []): array|bool
     {
@@ -48,11 +49,11 @@ trait QueryExecute{
                 }
             }
             else{
-                throw new BuilderException("Query Execution Failed " . $this->conn->error);
+                throw new BuilderException("Query execution failed. MySQL Error : " . $this->conn->error);
             }
         }
         else{
-            throw new BuilderException("Query Preparation Failed " . $this->conn->error);
+            throw new BuilderException("Query preparation failed. MySQL Error : " . $this->conn->error);
         }
     }
 }
