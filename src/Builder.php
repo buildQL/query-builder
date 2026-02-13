@@ -224,7 +224,7 @@ class Builder{
      */
     public function where(string $column, $oper, $value = null, $boolean = "and"): self
     {
-        if ($value == null && $oper == null){
+        if ($value === null && $oper === null){
             throw new BuilderException("Value must not be null in where() and orWhere() method");
         }
         $boolean = strtoupper($boolean);
@@ -347,7 +347,7 @@ class Builder{
      */
     public function having(string $column, $oper, $value = null, $boolean = "and"): self
     {
-        if ($value == null && $oper == null){
+        if ($value === null && $oper === null){
             throw new BuilderException("Value must not be null in having() and orHaving() method");
         }
         $boolean = strtoupper($boolean);
@@ -373,7 +373,7 @@ class Builder{
      */
     public function orderBy(string $column, string $sort = "ASC"): self
     {
-        $sort = strtoupper($sort) == "DESC" ? "DESC" : "ASC";
+        $sort = strtoupper($sort) === "DESC" ? "DESC" : "ASC";
         $this->orderBy[] = [$column, $sort];
         return $this;
     }

@@ -66,7 +66,7 @@ class DB{
      */
     public static function table(string $table, ?string $database = null): Builder
     {
-        if (self::getConnection() == null){
+        if (self::getConnection() === null){
             throw new BuilderException("Cannot run 'table()'. Database connection is not established. Call DB::boot() or DB::setConnection() first.", false);
         }
         return new Builder($table, self::getConnection(), $database);
@@ -155,7 +155,7 @@ class DB{
      */
     public static function setDatabaseGlobally(string $database): void
     {
-        if (self::getConnection() == null){
+        if (self::getConnection() === null){
             throw new BuilderException("Cannot set global database. A connection must be established before set the database globally.", false);
         }
         self::$instance->conn->select_db($database);
@@ -188,7 +188,7 @@ class DB{
     public static function raw(string $sql, array $bind = []): mixed
     {
         mysqli_report(MYSQLI_REPORT_OFF);
-        if (self::$instance == null){
+        if (self::$instance === null){
             throw new BuilderException("Cannot run raw SQL query. Database connection is not established. Call DB::boot() or DB::setConnection() first.", false);
         }
         if ($prepare = self::$instance->conn->prepare($sql)){

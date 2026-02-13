@@ -23,7 +23,7 @@ trait QueryConversion{
                 if ($this->where){
                     $whereCol = [];
                     foreach ($this->where as [$column, $oper, $value, $boolean]){
-                        if ($whereCol == []) $boolean = '';
+                        if ($whereCol === []) $boolean = '';
                         $column = $this->changeColumnFormat($column);
                         $wCol = "$boolean $column $oper";
                         // check value column is not null
@@ -40,7 +40,7 @@ trait QueryConversion{
                 if ($this->whereIn){
                     $whereInCol = [];
                     foreach ($this->whereIn as [$column, $value, $boolean, $whereNotIn]){
-                        if ($this->where == [] && $whereInCol == []) $boolean = "";
+                        if ($this->where = [] && $whereInCol === []) $boolean = "";
                         $column = $this->changeColumnFormat($column);
                         $oper = $whereNotIn ? "NOT IN" : "IN";
                         $whereInCol[] = "$boolean $column $oper (". rtrim(str_repeat("?,", count($value)), ",") .")";
@@ -67,11 +67,11 @@ trait QueryConversion{
         }
 
 
-        if ($methodCalledHim == 'insert'){
+        if ($methodCalledHim === 'insert'){
             $query = "INSERT INTO $this->table (`". implode("`, `", array_keys($data)) ."`) VALUES (". rtrim(str_repeat("?, ", count($data)), ", ") .")";
         }
 
-        elseif ($methodCalledHim == 'update'){
+        elseif ($methodCalledHim === 'update'){
             $col = [];
             foreach ($data as $key => $val){
                 $key = $this->changeColumnFormat($key);
@@ -81,15 +81,15 @@ trait QueryConversion{
             $query = "UPDATE $this->table SET " . implode(", ", $col) . " WHERE" . $where;
         }
 
-        elseif ($methodCalledHim == "delete"){
+        elseif ($methodCalledHim === "delete"){
             $query = "DELETE FROM $this->table WHERE " . $where;
         }
 
-        elseif ($methodCalledHim == "all"){
+        elseif ($methodCalledHim === "all"){
             $query = "SELECT * FROM $this->table";
         }
 
-        elseif ($methodCalledHim == "get"){
+        elseif ($methodCalledHim === "get"){
 
             $column = implode(", ", array_map(function ($col){
                 return $this->changeAggregateColumnFormat($col);
@@ -124,7 +124,7 @@ trait QueryConversion{
                 $join = [];
                 foreach ($this->joinTable as [$joinTable, $firstCol, $secondCol, $type]){
                     $joinTable = $this->changeColumnFormat($joinTable);
-                    if ($type == "CROSS"){
+                    if ($type === "CROSS"){
                         $join[] = " $type JOIN $joinTable";
                     }
                     else{
@@ -153,7 +153,7 @@ trait QueryConversion{
                 $havingCol = [];
                 $havingValues = [];
                 foreach ($this->having as [$col, $oper, $value, $boolean]){
-                    if ($havingCol == []) $boolean = '';
+                    if ($havingCol === []) $boolean = '';
                     $col = $this->changeAggregateColumnFormat($col);
                     $havingCol[] = "$boolean $col $oper ?";
                     $havingValues[] = $value;
@@ -202,7 +202,7 @@ trait QueryConversion{
                 if (preg_match("/^[a-z0-9_-]+\.\*$/i", $colAndAlias[0])){
                     $col = "`" . implode("`.", explode(".", $colAndAlias[0]));
                 }
-                elseif ($colAndAlias[0] == "*"){
+                elseif ($colAndAlias[0] === "*"){
                     $col = "*";
                 }
                 else{
