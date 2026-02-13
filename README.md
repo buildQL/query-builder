@@ -5,6 +5,17 @@ A secure, fluent, and lightweight SQL Query Builder for PHP 8.0+, inspired by La
 [![PHP Version](https://img.shields.io/badge/PHP-8.0%2B-blue)](https://php.net)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
+## 🎉 What's New in v1.0.4
+
+- **New `exists()` method**: Quickly check if records exist without fetching data ← ADD
+- **Strict Type Comparison**: All comparison operators now use `===` for type-safe queries
+- **Improved Reliability**: Enhanced type safety prevents unexpected query results
+- **Better Performance**: More predictable query execution
+
+[View full changelog](CHANGELOG.md)
+
+---
+
 ## Features
 
 - **Fluent Interface**: Chain methods to build complex queries elegantly
@@ -17,6 +28,8 @@ A secure, fluent, and lightweight SQL Query Builder for PHP 8.0+, inspired by La
 - **Raw SQL Support**: Execute custom queries when needed
 - **Environment Configuration**: Optional .env file support via phpdotenv
 - **Comprehensive Testing**: Fully tested with Pest PHP
+- **Type-Safe Comparisons**: Strict comparison operators (v1.0.4+) ← ADD THIS
+- **Existence Checks**: Quick `exists()` method to check record presence (v1.0.4+) ← ADD
 
 ## Requirements
 
@@ -303,6 +316,16 @@ DB::table('orders')
     ->select(['user_id', 'count(*):total_orders', 'sum(amount):total_spent'])
     ->groupBy('user_id')
     ->get();
+
+// count records check existance 
+DB::table('orders')
+    ->where("post", "like", "*mango*")
+    ->count();
+
+DB::table('orders')
+    ->where("post", "like", "*mango*")
+    ->exists(); // added in v1.0.4
+
 ```
 
 ---
@@ -973,6 +996,35 @@ $uniqueCities = DB::table('users')
     ->select(['city'])
     ->distinct()
     ->count();
+```
+
+---
+
+#### `exists()`
+
+Check the presence of the records.
+
+```php
+public function exists(): bool
+```
+
+**Returns:** Boolean presence
+
+**Examples:**
+```php
+// check whether the users table empty or not
+$total = DB::table('users')->exists();
+
+// check existance with condition
+$activeUsers = DB::table('users')
+    ->where('status', 'active')
+    ->exists();
+
+// check existance with multiple condition
+$uniqueCities = DB::table('users')
+    ->where('name', 'like', "a%")
+    ->whereNotNull('email_verified')
+    ->exists();
 ```
 
 ---
@@ -1836,8 +1888,14 @@ DB::boot(); // Dynamic from .env
 DB::table('users')->get();
 DB::table('users')->first();
 DB::table('users')->find(1);
-DB::table('users')->count();
 DB::table('users')->all();
+DB::table('users')->count();
+DB::table('users')->exists(); // added in v1.0.4
+
+// Check with conditions
+$hasActiveUsers = DB::table('users')
+    ->where('status', 'active')
+    ->exists(); // true/false
 
 // Filtering
 ->where('column', 'value')

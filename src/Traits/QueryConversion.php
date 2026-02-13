@@ -29,7 +29,7 @@ trait QueryConversion{
                         // check value column is not null
                         // null means user want to fetch record if it is null
                         // when value is null then cannot be append $value var in $whereValues array
-                        if ($value != null){
+                        if ($value !== null){
                             $wCol .= " ?";
                             $whereValues[] = $value;
                         }
@@ -175,7 +175,7 @@ trait QueryConversion{
             }
 
             if (isset($this->limit)){
-                if ($this->offset != null){
+                if ($this->offset !== null){
                     $query .= " LIMIT $this->offset, $this->limit";
                 }
                 else{

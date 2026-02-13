@@ -123,7 +123,7 @@ class Builder{
         $this->database = $database ?? $this->getCurrentDatabase();
 
         // define database to each object if no database define before
-        if ($database != null){
+        if ($database !== null){
             $this->conn->select_db($this->database);
         }
     }
@@ -149,8 +149,7 @@ class Builder{
      */
     public function leftJoin(string $table, string $primaryKey, string $foreignKey): self
     {
-        $this->join($table, $primaryKey, $foreignKey, "left");
-        return $this;
+        return $this->join($table, $primaryKey, $foreignKey, "left");
     }
 
 
@@ -159,8 +158,7 @@ class Builder{
      */
     public function rightJoin(string $table, string $primaryKey, string $foreignKey): self
     {
-        $this->join($table, $primaryKey, $foreignKey, "right");
-        return $this;
+        return $this->join($table, $primaryKey, $foreignKey, "right");
     }
 
 
@@ -169,8 +167,7 @@ class Builder{
      */
     public function crossJoin(string $table): self
     {
-        $this->join($table, null, null, "cross");
-        return $this;
+        return $this->join($table, null, null, "cross");
     }
 
 
@@ -239,8 +236,7 @@ class Builder{
      */
     public function orWhere(string $column, $oper, $value = null): self
     {
-        $this->where($column, $oper, $value, "or");
-        return $this;
+        return $this->where($column, $oper, $value, "or");
     }
 
 
@@ -267,8 +263,7 @@ class Builder{
     public function orWhereIn(string $column, array $values): self
     {   
         $whereNotIn = false;
-        $this->whereIn($column, $values, "or", $whereNotIn);
-        return $this;
+        return $this->whereIn($column, $values, "or", $whereNotIn);
     }
     
 
@@ -294,8 +289,7 @@ class Builder{
      */
     public function orwhereNotIn(string $column, array $values): self
     {
-        $this->whereNotIn($column, $values, "or", true);
-        return $this;
+        return $this->whereNotIn($column, $values, "or", true);
     }
 
 
@@ -315,8 +309,7 @@ class Builder{
      */
     public function orWhereNull(string $column): self
     {
-        $this->whereNull($column, "or");
-        return $this;
+        return $this->whereNull($column, "or");
     }
     
 
@@ -336,8 +329,7 @@ class Builder{
      */
     public function orWhereNotNull(string $column): self
     {
-        $this->whereNotNull($column, "or");
-        return $this;
+        return $this->whereNotNull($column, "or");
     }
 
 
@@ -362,8 +354,7 @@ class Builder{
      */
     public function orHaving(string $column, $oper, $value = null): self
     {
-        $this->having($column, $oper, $value, "or");
-        return $this;
+        return $this->having($column, $oper, $value, "or");
     }
 
 
@@ -385,7 +376,7 @@ class Builder{
     public function limit(int $limit, ?int $offset = null): self
     {
         $this->limit = $limit;
-        if ($offset != null){
+        if ($offset !== null){
             $this->offset = $offset;
         }
         return $this;
@@ -421,7 +412,7 @@ class Builder{
     public function get(array $columns = ["*"]): array
     {
         $builder = clone $this;
-        if ($columns != ['*']) $builder->select($columns);
+        if ($columns !== ['*']) $builder->select($columns);
         // convert SQL query
         $builder->convertToSQL(__FUNCTION__);
         return $builder->prepareAndExecuteQuery(__FUNCTION__);
@@ -464,6 +455,26 @@ class Builder{
         $alias = stripos($this->rawTable, ":") !== false ? explode(":", $this->rawTable)[1] : null;
         $col = $alias ? $alias.".id" : $this->rawTable . ".id";
         return $builder->where($col, $id)->first($columns);
+    }
+
+
+    /**
+     *  Count the total numbers of records that are being fetched during query execution
+     *  @throws BuildQL\Database\Query\Exception\BuilderException
+     */
+    public function count(): int
+    {
+        return (clone $this)->select(["count(*):count"])->first()["count"];
+    }
+    
+
+    /**
+     *  Checks whether the record(s) exists in the database.
+     *  @throws BuildQL\Database\Query\Exception\BuilderException
+     */
+    public function exists(): bool
+    {
+        return ($this->count() > 0);
     }
 
 
@@ -531,17 +542,6 @@ class Builder{
         // convert to raw SQl query
         $this->convertToSQL(__FUNCTION__);
         return $this->prepareAndExecuteQuery(__FUNCTION__);
-    }
-
-
-    /**
-     *  Count the total numbers of records that are being fetched during query execution
-     *  @throws BuildQL\Database\Query\Exception\BuilderException
-     */
-    public function count(): int
-    {
-        $builder = clone $this;
-        return $builder->select(["count(*):count"])->first()["count"];
     }
 
 
